@@ -1,0 +1,34 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+
+# Uploads (runtime generated)
+uploads/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
