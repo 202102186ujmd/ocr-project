@@ -1,6 +1,6 @@
 # OCR API con Paligemma
 
-API de Reconocimiento Óptico de Caracteres (OCR) construida con FastAPI y el modelo Paligemma de Google.
+API de Reconocimiento Óptico de Caracteres (OCR) construida con **FastAPI** y el modelo **Paligemma** de Google, optimizada para procesar documentos de identidad salvadoreños (DUI y licencias de conducir).
 
 ## Estructura del Proyecto
 
@@ -9,7 +9,8 @@ ocr-project/
 ├── main.py                 # Aplicación FastAPI principal
 ├── config.py              # Configuración de la aplicación
 ├── requirements.txt       # Dependencias del proyecto
-├── test_main.http         # Tests HTTP
+├── .env.example           # Variables de entorno de ejemplo
+├── test_main.http         # Tests HTTP (JetBrains HTTP Client)
 ├── models/
 │   ├── __init__.py
 │   └── ocr_model.py       # Integración del modelo Paligemma
@@ -21,8 +22,8 @@ ocr-project/
 │   └── ocr_routes.py      # Endpoints de la API
 ├── utils/
 │   ├── __init__.py
-│   └── helpers.py         # Funciones auxiliares
-└── uploads/               # Carpeta para imágenes subidas
+│   └── helpers.py         # Funciones auxiliares y validadores
+└── uploads/               # Carpeta temporal para imágenes subidas
 ```
 
 ## Instalación
@@ -30,6 +31,7 @@ ocr-project/
 ### Requisitos previos
 - Python 3.8+
 - pip (gestor de paquetes de Python)
+- GPU con al menos 6 GB de VRAM (recomendado para float16)
 
 ### Pasos de instalación
 
@@ -57,6 +59,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+5. **Configurar variables de entorno**
+```bash
+cp .env.example .env
+# Editar .env según tu entorno
+```
+
 ## Uso
 
 ### Iniciar la aplicación
@@ -74,122 +82,178 @@ La API estará disponible en: `http://localhost:8000`
 
 ## Endpoints disponibles
 
-### 1. Health Check
+### Health Check
 ```
 GET /api/ocr/health
 ```
 Verifica el estado del servicio OCR.
 
-### 2. Subir imagen
+### Subir imagen
 ```
 POST /api/ocr/upload
 Content-Type: multipart/form-data
 
 file: <archivo de imagen>
 ```
-Respuesta:
-```json
-{
-  "success": true,
-  "filename": "20260408_120000_imagen.jpg",
-  "file_path": "/path/to/uploads/20260408_120000_imagen.jpg",
-  "message": "Archivo guardado exitosamente"
-}
-```
 
-### 3. Extraer texto de imagen local
+### Extraer texto de imagen local
 ```
 POST /api/ocr/extract?image_path=/path/to/image.jpg&prompt=¿Qué texto ves?
 ```
 
-### 4. Extraer texto de URL
+### Extraer texto de URL
 ```
-POST /api/ocr/extract-from-url?image_url=https://example.com/image.jpg&prompt=Extrae el texto
+POST /api/ocr/extract-from-url?image_url=https://example.com/image.jpg
 ```
 
-### 5. Root
+### Extraer campos de DUI ⭐
 ```
-GET /
-```
-Información general de la API.
+POST /api/ocr/extract-dui
+Content-Type: multipart/form-data
 
-### 6. Test
+file: <imagen del DUI>
 ```
-GET /hello/{name}
+Respuesta:
+```json
+{
+  "apellidos": "GARCIA LOPEZ",
+  "nombres": "JUAN CARLOS",
+  "genero": "M",
+  "fecha_nacimiento": "1990-05-15",
+  "lugar_nacimiento": "San Salvador",
+  "numero_dui": "01234567-8",
+  "raw_extraction": "...",
+  "processing_time": 1.234,
+  "valid": true
+}
 ```
-Endpoint de prueba.
+
+### Extraer campos de Licencia de Conducir ⭐
+```
+POST /api/ocr/extract-license
+Content-Type: multipart/form-data
+
+file: <imagen de la licencia>
+```
+Respuesta:
+```json
+{
+  "nombre": "Juan Carlos Garcia",
+  "numero_licencia": "ABC123456",
+  "dui": "01234567-8",
+  "clase_categoria": "D",
+  "fecha_vencimiento": "2026-12-31",
+  "genero": "M",
+  "raw_extraction": "...",
+  "processing_time": 1.456,
+  "valid": true
+}
+```
+
+### Validar integridad de documento ⭐
+```
+POST /api/ocr/validate-document?document_type=dui
+Content-Type: multipart/form-data
+
+file: <imagen del documento>
+```
+Respuesta:
+```json
+{
+  "document_type": "dui",
+  "is_valid": true,
+  "errors": [],
+  "warnings": ["Género no encontrado"],
+  "fields": { ... }
+}
+```
+
+### Procesamiento por lotes ⭐
+```
+POST /api/ocr/batch-process
+Content-Type: multipart/form-data
+
+files: <imagen 1>
+files: <imagen 2>
+...
+```
+Respuesta:
+```json
+{
+  "total": 3,
+  "successful": 2,
+  "failed": 1,
+  "results": [ ... ],
+  "processing_time": 4.567
+}
+```
 
 ## Configuración
 
-Editar el archivo `config.py` para personalizar:
+Editar el archivo `.env` (basado en `.env.example`) o directamente `config.py`:
 
-- `app_name`: Nombre de la aplicación
-- `app_version`: Versión de la aplicación
-- `upload_dir`: Directorio de uploads
-- `paligemma_model`: Modelo a utilizar
-- `device`: CPU o CUDA (GPU)
-- `max_upload_size`: Tamaño máximo de archivo
+| Variable | Descripción | Default |
+|---|---|---|
+| `PALIGEMMA_MODEL` | HuggingFace model ID | `google/paligemma-3b-pt-448` |
+| `DEVICE` | `cuda` o `cpu` | `cuda` |
+| `DTYPE` | `float16` (GPU) o `float32` (CPU) | `float16` |
+| `USE_INT8` | Cuantización int8 para reducir VRAM | `false` |
+| `UPLOAD_DIR` | Directorio de uploads temporales | `./uploads` |
+| `MAX_UPLOAD_SIZE` | Tamaño máximo de archivo (bytes) | `10485760` |
+| `MAX_NEW_TOKENS` | Tokens máximos a generar | `512` |
 
-## Modelos disponibles
+## Optimización de GPU
 
-- `google/paligemma-3b-pt-224` (por defecto)
-- Otros modelos de Paligemma disponibles en HuggingFace
-
-## Requisitos de GPU (opcional)
-
-Para usar GPU (CUDA):
-
-1. Instalar CUDA Toolkit
-2. Cambiar `device` a `"cuda"` en `config.py`
-3. Instalar versiones compatibles de torch:
-
+Para usar GPU con float16 (~6 GB VRAM):
 ```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# En .env
+DEVICE=cuda
+DTYPE=float16
 ```
 
-## Estructura de respuestas
-
-### OCRResponse
-```json
-{
-  "success": true,
-  "text": "Texto extraído de la imagen",
-  "confidence": 0.85,
-  "error": null
-}
+Para cuantización int8 (~4 GB VRAM, requiere bitsandbytes):
+```bash
+USE_INT8=true
 ```
 
-### HealthResponse
-```json
-{
-  "status": "online",
-  "version": "0.1.0",
-  "message": "OCR API con Paligemma activa y funcionando"
-}
+Para CPU (sin GPU):
+```bash
+DEVICE=cpu
+DTYPE=float32
 ```
+
+## Especificaciones de documentos soportados
+
+### DUI de El Salvador
+- **Campos extraídos**: Apellidos, Nombres, Género, Fecha de Nacimiento, Lugar de Nacimiento, Número Único de Identidad
+- **Validación**: Número DUI con formato `XXXXXXXX-X` (9 dígitos)
+
+### Licencia de Conducir de El Salvador
+- **Campos extraídos**: Nombre completo, Número de Licencia, DUI/ID, Clase/Categoría, Fecha de Vencimiento, Género
+- **Validación**: Fecha de vencimiento en rango 2020-2035, número de licencia con mínimo 4 caracteres
 
 ## Solución de problemas
 
 ### Error: "Modelo no encontrado"
-- Verificar conexión a internet (necesaria para descargar el modelo)
+- Verificar conexión a internet (necesaria para descargar el modelo la primera vez)
 - Verificar que HuggingFace esté accesible
 
 ### Error: "CUDA out of memory"
-- Cambiar a CPU en `config.py`
-- Reducir tamaño de imagen
-- Usar modelo más pequeño
+- Activar cuantización int8: `USE_INT8=true`
+- Cambiar a CPU: `DEVICE=cpu`, `DTYPE=float32`
+- Reducir resolución de imagen
 
 ### Lentitud al procesar
 - Usar GPU en lugar de CPU
 - Optimizar imagen (reducir resolución)
-- Usar modelo quantizado
+- Usar cuantización int8
 
 ## Desarrollo
 
 ### Agregar nuevo endpoint
 1. Crear función en `routes/ocr_routes.py`
-2. Usar decoradores de FastAPI (`@router.get()`, `@router.post()`, etc.)
-3. Definir modelos en `schemas/schemas.py`
+2. Definir schema en `schemas/schemas.py`
+3. Agregar tests en `test_main.http`
 
 ### Agregar función auxiliar
 1. Crear función en `utils/helpers.py`
