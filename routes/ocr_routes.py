@@ -127,8 +127,17 @@ async def extract_text_from_url(image_url: str, prompt: Optional[str] = None):
         import io
         import tempfile
         import urllib.request
+        from urllib.parse import urlparse
 
         from PIL import Image
+
+        # Validate URL scheme to prevent SSRF attacks
+        parsed = urlparse(image_url)
+        if parsed.scheme not in ("http", "https"):
+            raise HTTPException(
+                status_code=400,
+                detail="Solo se permiten URLs con esquema http o https",
+            )
 
         logger.info(f"Descargando imagen desde: {image_url}")
         with urllib.request.urlopen(image_url) as response:  # noqa: S310
@@ -224,8 +233,6 @@ async def extract_dui(file: UploadFile = File(...)):
 
         ocr_model = get_ocr_model()
         fields = ocr_model.extract_dui_fields(file_path)
-
-        from utils.helpers import validate_dui_number
 
         is_valid, _errors, _warnings = validate_dui_fields(fields)
 
