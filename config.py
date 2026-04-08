@@ -1,29 +1,57 @@
 import os
-from typing import Optional
 
 
 class Settings:
-    # Modelo
-    MODEL_NAME = "paligemma"
-    MODEL_ID = "google/paligemma-3b-pt-448"  # Versión de 3B parámetros
+    # API
+    app_name: str = "OCR Document Processing API"
+    app_version: str = "1.0.0"
 
-    # GPU
-    DEVICE = "cuda"  # o "cpu" si no tienes GPU
-    DTYPE = "float16"  # Usar float16 para ahorrar VRAM
+    # Modelo Paligemma
+    paligemma_model: str = os.getenv("PALIGEMMA_MODEL", "google/paligemma-3b-pt-448")
+
+    # GPU / dispositivo
+    device: str = os.getenv("DEVICE", "cuda")
+    # "float16" para GPU, "float32" para CPU
+    dtype: str = os.getenv("DTYPE", "float16")
+    # Habilitar cuantización int8 para reducir VRAM (requiere bitsandbytes)
+    use_int8: bool = os.getenv("USE_INT8", "false").lower() == "true"
 
     # Directorios
-    UPLOAD_DIR = "./uploads"
-    MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+    upload_dir: str = os.getenv("UPLOAD_DIR", "./uploads")
+    max_upload_size: int = int(os.getenv("MAX_UPLOAD_SIZE", str(10 * 1024 * 1024)))  # 10 MB
 
-    # OCR
-    OCR_PROMPT = "Extract all text from this document. Return structured information."
+    # Generación de texto
+    max_new_tokens: int = int(os.getenv("MAX_NEW_TOKENS", "512"))
 
-    # API
-    API_TITLE = "OCR Document Processing API"
-    API_VERSION = "1.0.0"
+    # Prompts genéricos
+    ocr_prompt: str = (
+        "Extract all text from this document. Return structured information."
+    )
+
+    # Prompt para DUI de El Salvador
+    dui_prompt: str = (
+        "This is a DUI (Documento Único de Identidad) from El Salvador. "
+        "Extract all fields: Apellidos (last name), Nombres (first name), "
+        "Género (gender), Fecha de Nacimiento (date of birth), "
+        "Lugar de Nacimiento (place of birth), "
+        "Número Único de Identidad (9-digit DUI number). "
+        "Return each field on its own line as 'Field: Value'."
+    )
+
+    # Prompt para licencia de conducir de El Salvador
+    license_prompt: str = (
+        "This is a driver's license (Licencia de Conducir) from El Salvador. "
+        "Extract all fields: Nombre (full name), "
+        "Número de Licencia (license number), "
+        "DUI (identity document number), "
+        "Clase/Categoría (class/category such as A, B, C, D), "
+        "Fecha de Vencimiento (expiration date), "
+        "Género (gender). "
+        "Return each field on its own line as 'Field: Value'."
+    )
 
 
 settings = Settings()
 
 # Crear directorio de uploads si no existe
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.upload_dir, exist_ok=True)

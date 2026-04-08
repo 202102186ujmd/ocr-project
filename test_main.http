@@ -1,11 +1,115 @@
 # Test your FastAPI endpoints
 
+### Root
 GET http://127.0.0.1:8000/
 Accept: application/json
 
 ###
 
+### Hello endpoint (prueba)
 GET http://127.0.0.1:8000/hello/User
 Accept: application/json
 
 ###
+
+### Health check del servicio OCR
+GET http://127.0.0.1:8000/api/ocr/health
+Accept: application/json
+
+###
+
+### Subir imagen
+POST http://127.0.0.1:8000/api/ocr/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="documento.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/documento.jpg
+--boundary--
+
+###
+
+### Extraer texto de imagen local
+POST http://127.0.0.1:8000/api/ocr/extract?image_path=./uploads/documento.jpg
+Accept: application/json
+
+###
+
+### Extraer texto desde URL
+POST http://127.0.0.1:8000/api/ocr/extract-from-url?image_url=https://example.com/documento.jpg
+Accept: application/json
+
+###
+
+### Extraer campos de DUI (POST multipart)
+POST http://127.0.0.1:8000/api/ocr/extract-dui
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="dui.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/dui.jpg
+--boundary--
+
+###
+
+### Extraer campos de Licencia de Conducir (POST multipart)
+POST http://127.0.0.1:8000/api/ocr/extract-license
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="licencia.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/licencia.jpg
+--boundary--
+
+###
+
+### Validar documento DUI
+POST http://127.0.0.1:8000/api/ocr/validate-document?document_type=dui
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="dui.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/dui.jpg
+--boundary--
+
+###
+
+### Validar documento Licencia
+POST http://127.0.0.1:8000/api/ocr/validate-document?document_type=license
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="licencia.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/licencia.jpg
+--boundary--
+
+###
+
+### Procesar múltiples imágenes en lote
+POST http://127.0.0.1:8000/api/ocr/batch-process
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="files"; filename="doc1.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/doc1.jpg
+--boundary
+Content-Disposition: form-data; name="files"; filename="doc2.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/doc2.jpg
+--boundary--
+
+###
+
