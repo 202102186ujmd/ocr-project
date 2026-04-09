@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     """Lifecycle handler: startup y shutdown."""
     logger.info(f"🚀 Iniciando {settings.app_name} v{settings.app_version}")
     logger.info(f"📁 Directorio de uploads: {settings.upload_dir}")
-    logger.info(f"🤖 Modelo: {settings.paligemma_model}")
+    logger.info(f"🤖 Modelo: {settings.PALIGEMMA_LOCAL_PATH}")  # ✅ CORRECTO
     logger.info(f"💻 Dispositivo: {settings.device}")
     yield
     logger.info("👋 Cerrando aplicación")
