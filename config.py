@@ -7,7 +7,15 @@ class Settings:
     app_version: str = "1.0.0"
 
     # Modelo Paligemma
-    paligemma_model: str = os.getenv("PALIGEMMA_MODEL", "google/paligemma-3b-pt-448")
+    # paligemma_model: str = os.getenv("PALIGEMMA_MODEL", "google/paligemma-3b-pt-448")
+    # Usar ruta local en lugar de descargar de internet
+    PALIGEMMA_LOCAL_PATH = os.path.join(
+        os.path.dirname(__file__),
+        "models/paligemma-3b-pt-448"
+    )
+
+    # Modo offline - no descargar de internet
+    USE_LOCAL_MODEL_ONLY = True
 
     # GPU / dispositivo
     device: str = os.getenv("DEVICE", "cuda")
