@@ -7,7 +7,7 @@ class Settings:
     app_version: str = "1.0.0"
 
     # Modelo Paligemma
-    # paligemma_model: str = os.getenv("PALIGEMMA_MODEL", "google/paligemma-3b-pt-448")
+    paligemma_model: str = os.getenv("PALIGEMMA_MODEL", "google/paligemma-3b-pt-448")
     # Usar ruta local en lugar de descargar de internet
     PALIGEMMA_LOCAL_PATH = os.path.join(
         os.path.dirname(__file__),
